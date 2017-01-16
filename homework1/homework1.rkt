@@ -27,39 +27,25 @@ of the function is 0 (zero).
 (define (sum-two-largest x y z)
   (cond
     [(and (= x y) (= y z)) 0]
-    [(or (and (>= x y) (> y z)) (and (>= y x) (>= x z))) (+ x y)] ;The cases x >= y > z or y >= x > z
-    [(or (and (>= x z) (> z y)) (and (>= y z) (>= z x))) (+ y z)] ;The cases x >= z > y or z >= x > y
-    [(or (and (>= y z) (> z x)) (and (>= z y) (>= y x))) (+ y z)] ;The cases y >= z > x or z >= y > x
+    [(or (and (> x z) (> z y)) (and (> z x) (> x y))) (+ x z)]
+    [(or (and (> x y) (> y z)) (and (> y x) (> x z))) (+ x y)]
+    [(or (and (> y z) (> z x)) (and (> z y) (> y x))) (+ z y)]
     )
   )
+;NOTE: Does not take in to account have two equal numbers
 
 #|
 Evaluate a similar if (or cond) expression that has as its value the sum of the two
 smallest of x, y and z, if all three are of the same value, the value of the function
 is 0 (zero).
-(define (sum-two-smallest x y z)
-  (if (and (= x y) (= y z))
-      0
-      (if (and (< z y) (< y x ))
-          (+ z y)
-          (if (and (< x y) (< y z))
-              (+ x y)
-              (if (and (< y x) (< x z))
-                  (+ y x)
-                  (+ x z)
-                  )
-              )
-          )
-      )
-  )
 |#
 
 (define (sum-two-smallest x y z)
   (cond
     [(and (= x y) (= y z)) 0]
-    [(or (and (<= x y) (< y z)) (and (<= y x) (<= x z))) (+ x y)] ;The cases x <= y < z or y <= x < z
-    [(or (and (<= x z) (< z y)) (and (<= y z) (<= z x))) (+ y z)] ;The cases x <= z < y or z <= x < y
-    [(or (and (<= y z) (< z x)) (and (<= z y) (<= y x))) (+ y z)] ;The cases y <= z < x or z <= y < x
+    [(or (and (< x y) (< y z)) (and (< y x) (< x z))) (+ x y)]
+    [(or (and (< x z) (< z y)) (and (< z x) (< x y))) (+ x z)]
+    [(or (and (< y z) (< z x)) (and (< z y) (< y x))) (+ y z)]
     )
   )
 
@@ -150,10 +136,10 @@ found here:
 http://docs.racket-lang.org/reference/pairs.html?q=cadr&q=rackunit#(part._.Pair_.Accessor_.Shorthands)
 |#
 
-(define lst (list 1 2 3))
-(cons 4 (cons (car lst) (cdr lst)))
-(append (reverse (cdr (reverse lst))) (list 4) (reverse (cdr (reverse lst))))
-(append (cdr lst) (list 4 (car lst)))
+(define lst '(a b c))
+(cons `d (cons (car lst) (cdr lst)))
+(append (reverse (cdr (reverse lst))) (list `d) (reverse (cdr (reverse lst))))
+(append (cdr lst) (list `d (car lst)))
 
 #|
 The standard library provides two functions eq? and equal? (the question mark
@@ -231,6 +217,6 @@ uncaught exception: "This is a custom error message we will be using next. Symbo
     [(and (and (string=? "answer-to-everything" (symbol->string (first pair))) (symbol? (first pair))) (= 42 (second pair))) #t]
     [(and (and (not (string=? "answer-to-everything" (symbol->string (first pair)))) (symbol? (first pair))) (= 42 (second pair))) #f]
     [(and (and (not (string=? "answer-to-everything" (symbol->string (first pair)))) (symbol? (first pair))) (not (= 42 (second pair)))) #f]
-    [(and (and (string=? "answer-to-everything" (symbol->string (first pair))) (symbol? (first pair))) (not (= 42 (second pair)))) (raise (create-error-msg (first pair) (second pair)))]
+    [(and (and (string=? "answer-to-everything" (symbol->string (first pair))) (symbol? (first pair))) (not (= 42 (second pair)))) (raise (create-error-msg (first pair) 42))]
     )
   )
