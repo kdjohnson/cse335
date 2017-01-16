@@ -225,4 +225,12 @@ all other cases your function should return #f.
 uncaught exception: "This is a custom error message we will be using next. Symbol
 'answer-to-everything was not paired with value 42"
 |#
-      
+
+(define (check-correctness pair)
+  (cond
+    [(and (and (string=? "answer-to-everything" (symbol->string (first pair))) (symbol? (first pair))) (= 42 (second pair))) #t]
+    [(and (and (not (string=? "answer-to-everything" (symbol->string (first pair)))) (symbol? (first pair))) (= 42 (second pair))) #f]
+    [(and (and (not (string=? "answer-to-everything" (symbol->string (first pair)))) (symbol? (first pair))) (not (= 42 (second pair)))) #f]
+    [(and (and (string=? "answer-to-everything" (symbol->string (first pair))) (symbol? (first pair))) (not (= 42 (second pair)))) (raise (create-error-msg (first pair) (second pair)))]
+    )
+  )
