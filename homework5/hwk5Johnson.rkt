@@ -118,83 +118,84 @@
     )
   )
 
-(define move
-  (lambda (pt st)
-    (cases step st
-      (up-step (n) (list (car pt) (+ (cadr pt) (single-step->n st))))
-      (down-step (n) (list (car pt) (- (cadr pt) (single-step->n st))))
-      (left-step (n) (list (- (car pt) (single-step->n st)) (cadr pt)))
-      (right-step (n) (list (+ (car pt) (single-step->n st)) (cadr pt)))
-      (seq-step (st1 st2) (move (move pt st2) st1))
-      )
+(define (move start-p step)
+  (cond
+    [(up-step? step) (list (car start-p) (+ (cadr start-p) (single-step->n step)))]
+    [(down-step? step) (list (car start-p) (- (cadr start-p) (single-step->n step)))]
+    [(left-step? step) (list (- (car start-p) (single-step->n step)) (cadr start-p))]
+    [(right-step? step) (list (+ (car start-p) (single-step->n step)) (cadr start-p))]
+    [(seq-step? step) (move (move start-p (seq-step->st-2 step)) (seq-step->st-1 step))]
+    [else (raise (invalid-args-msg "move" "step?" step))]
     )
   )
 
-(define-datatype environment environment?
-  (empty-env)
-  (extend-env (var symbol?) (val number?) (env environment?))
-  (extend-env-final (var symbol?) (val number?) (env environment?))
-  )
 
-(define (exception-no-binding-msg sym)
-  (string-append "No binding for '" (~a sym))
-  )
 
-(define apply-env
-  (lambda (env search-val)
-    (cases environment env
-      (empty-env () (exception-no-binding-msg search-val))
-      (extend-env (saved-var saved-val saved-env)
-                  (if (eqv? search-val saved-var)
-                      saved-val
-                      (apply-env saved-env search-val)
-                      )
-                  )
-      (extend-env-final (saved-var saved-val saved-env)
+  (define-datatype environment environment?
+    (empty-env)
+    (extend-env (var symbol?) (val number?) (env environment?))
+    (extend-env-final (var symbol?) (val number?) (env environment?))
+    )
+
+  (define (exception-no-binding-msg sym)
+    (string-append "No binding for '" (~a sym))
+    )
+
+  (define apply-env
+    (lambda (env search-val)
+      (cases environment env
+        (empty-env () (exception-no-binding-msg search-val))
+        (extend-env (saved-var saved-val saved-env)
+                    (if (eqv? search-val saved-var)
                         saved-val
+                        (apply-env saved-env search-val)
                         )
-      )
-    )
-  )
-
-
-(define FINAL #t)
-(define NON-FINAL #f)
-(define (exception-sym-final-msg sym)
-  (string-append "Symbol '" (~a sym) " is final and cannot be overriden.")
-  )
-
-(define extend-env-wrapper
-  (lambda (sym val old-env final?)  
-    (if (is-final? old-env sym)
-        (exception-sym-final-msg sym)
-        (if final?
-            (extend-env-final sym val old-env)
-            (extend-env sym val old-env)
-            )
+                    )
+        (extend-env-final (saved-var saved-val saved-env)
+                          saved-val
+                          )
         )
-    )
-  )
-
-(define is-final?
-  (lambda (env sym)
-    (cases environment env
-      (empty-env () #f)
-      (extend-env (kept-sym kept-val prev-env) (is-final? prev-env sym))
-      (extend-env-final (kept-sym kept-val prev-env) (if (equal? sym kept-sym)
-                                                         #t
-                                                         (is-final? prev-env sym)
-                                                         ))
       )
     )
-  )
 
 
-;(define x-42-nf (extend-env-wrapper 'x 42 (empty-env) NON-FINAL))
-;(define x-42-f (extend-env-wrapper 'x 42 (empty-env) FINAL))
+  (define FINAL #t)
+  (define NON-FINAL #f)
+  (define (exception-sym-final-msg sym)
+    (string-append "Symbol '" (~a sym) " is final and cannot be overriden.")
+    )
 
-(define x-42-nf (extend-env-wrapper 'x 42 (empty-env) NON-FINAL))
-    (define x-42-f (extend-env-wrapper 'x 42 (empty-env) FINAL))
+  (define extend-env-wrapper
+    (lambda (sym val old-env final?)  
+      (if (is-final? old-env sym)
+          (exception-sym-final-msg sym)
+          (if final?
+              (extend-env-final sym val old-env)
+              (extend-env sym val old-env)
+              )
+          )
+      )
+    )
+
+  (define is-final?
+    (lambda (env sym)
+      (cases environment env
+        (empty-env () #f)
+        (extend-env (kept-sym kept-val prev-env) (is-final? prev-env sym))
+        (extend-env-final (kept-sym kept-val prev-env) (if (equal? sym kept-sym)
+                                                           #t
+                                                           (is-final? prev-env sym)
+                                                           ))
+        )
+      )
+    )
+
+
+  ;(define x-42-nf (extend-env-wrapper 'x 42 (empty-env) NON-FINAL))
+  ;(define x-42-f (extend-env-wrapper 'x 42 (empty-env) FINAL))
+
+  (define x-42-nf (extend-env-wrapper 'x 42 (empty-env) NON-FINAL))
+  (define x-42-f (extend-env-wrapper 'x 42 (empty-env) FINAL))
     
-    (define y-24-nf$x-42-nf (extend-env-wrapper 'y 24 x-42-nf NON-FINAL))
-    (define y-24-nf$x-42-f (extend-env-wrapper 'y 24 x-42-f NON-FINAL))
+  (define y-24-nf$x-42-nf (extend-env-wrapper 'y 24 x-42-nf NON-FINAL))
+  (define y-24-nf$x-42-f (extend-env-wrapper 'y 24 x-42-f NON-FINAL))
