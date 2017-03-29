@@ -139,7 +139,7 @@
     (move-expr (ex1 ex2 ex3) "nwoeijowej")
     (block-expr (var expr) "block expr")
     (v-expr (i) i)
-    (else "fuck")
+    (else "Doesn't look like anything to me...")
     )
   )
 
