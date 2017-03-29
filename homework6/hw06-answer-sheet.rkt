@@ -134,7 +134,7 @@
     (right (n) (step-val (right-step (num-val->n (value-of n env)))))
     (point-expr (pt1 pt2) (point-val (point (num-val->n (value-of pt1 env)) (num-val->n (value-of pt2 env)))))
     (add-expr (left right) (add-helper left right))
-    (origin-expr (ex) "now")
+    (origin-expr (ex) ex)
     (if-expr (ex1 ex2 ex3) "!!!!")
     (move-expr (ex1 ex2 ex3) "nwoeijowej")
     (block-expr (var expr) "block expr")
@@ -143,32 +143,42 @@
     )
   )
 
-#|
-(define add-helper
-  (lambda (left right)
-    (if (follows-add-rules? left right)
-        (+ (single-step->n (step-val->st (value-of left '()))) (single-step->n (step-val->st (value-of right '()))))
-        (raise (invalid-args-exception "add-helper" "add-expr" (~a left right)))  
-        )
-    )
-  )
-|#
-
 (define add-helper
   (lambda (left right)
     (letrec
         ([left-expr (step-val->st (value-of left (empty-env)))]
          [right-expr (step-val->st (value-of right (empty-env)))]
-         [left-evaluated (single-step->n (step-val->st (value-of left '())))]
-         [right-evaluated (single-step->n (step-val->st (value-of right '())))]
          )
       (if (follows-add-rules? left-expr right-expr)
-          (+ (convert-to-cartesian left-expr) (convert-to-cartesian right-expr))
-          (raise (invalid-args-exception "add-helper" "add-expr" (~a left right)))  
+          (cond
+            [(or (up-step? left-expr) (down-step? left-expr)) (vertical-axis (+ (convert-to-cartesian left-expr) (convert-to-cartesian right-expr)))]
+            [(or (left-step? right-expr) (right-step? right-expr)) (horizontal-axis (+ (convert-to-cartesian left-expr) (convert-to-cartesian right-expr)))]
+            [else (raise (invalid-args-exception "add-helper" "add-expr" (~a left right)))]
+            )
+          (raise (invalid-args-exception "add-helper" "add-expr" (~a left right)))
           )
       )
     )
   )
+
+(define vertical-axis
+  (lambda (y)
+    (if (positive? y)
+        (step-val (up-step y))
+        (step-val (down-step (* -1 y)))
+        )
+    )
+  )
+
+(define horizontal-axis
+  (lambda (x)
+    (if (positive? x)
+        (step-val (right-step x))
+        (step-val (left-step (* -1 x)))
+        )
+    )
+  )
+
 (define convert-to-cartesian
   (lambda (st)
     (cases step st
@@ -185,6 +195,7 @@
     (or (and (left-step? addend1) (left-step? addend2))
         (and (left-step? addend1) (right-step? addend2))
         (and (right-step? addend1) (right-step? addend2))
+        (and (right-step? addend1) (left-step? addend2))
         (and (down-step? addend1) (down-step? addend2))
         (and (down-step? addend1) (up-step? addend2))
         (and (up-step? addend1) (down-step? addend2))
