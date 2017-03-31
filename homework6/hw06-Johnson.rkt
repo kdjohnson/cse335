@@ -113,7 +113,6 @@
       old-env
       (build-new-env (cdr lst1) (add-one-at-a-time (car lst1) old-env))))
 
-
 (define add-one-at-a-time
     (lambda (lst1 old-env)
       (cases var-expr lst1
@@ -222,7 +221,6 @@
       )
     )
   )
-
 
 (define if-helper
   (lambda (ex r1 r2)
