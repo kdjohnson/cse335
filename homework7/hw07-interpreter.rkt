@@ -128,44 +128,46 @@
      (lst-of-var-expr lst-of-expr)
      (andmap (lambda (x) (value-of x (build-new-env lst-of-var-expr env)))  lst-of-expr))
 
-    ;fun ( identifier* ) = <expr>    "fun-expr"
+    ;BNF -> fun ( identifier* ) = <expr>    "fun-expr"
     (fun-expr (list-of-iden body) (proc-val (procedure list-of-iden body env)))
 
-    ;call (<expr> <expr>*)           "fun-call-expr"
-    (fun-call-expr (func parameters) (call-helper func parameters env))
+    ;BNF -> call (<expr> <expr>*)           "fun-call-expr"
+    (fun-call-expr (func list-of-parameters) (call-helper func list-of-parameters env))
     
     (else (raise (~a "value-of-expr error: unimplemented expression: " ex)))
     )
   )
 
 (define call-helper
-  (lambda (func params env)
+  (lambda (func list-of-params env)
     (letrec
         ([proc-val (value-of func env)]
          [proc (proc-val->proc proc-val)]
-         [params-val (expr-to-value params)] ;(list (step-val (down-step 40)))
-         [identifiers (helper proc)] 
+         [lst-func-params-val (expr->val list-of-params env)] ;(list (step-val (down-step 40)))
+         [func-body (get-func-body-val proc)]
+         [func-env (get-func-env proc)]
+         [lst-func-identifiers (get-func-params proc)]
+         [new-env (bind lst-func-identifiers lst-func-params-val func-env)]
          )
-      identifiers)
+      (value-of func-body new-env))
     )
   )
 
-(define (sym-to-val sym body)
-  sym
+(define (bind lst-vars lst-args old-env)
+  (if (= (length lst-vars) (length lst-args))
+      (foldl (lambda (var val old-env) (extend-env-wrapper var val old-env FINAL)) old-env lst-vars lst-args)
+      (raise (~a " arity mismatch. expected " (length lst-vars) " arguments, recieved " (length lst-args)))
+      )
   )
 
-(define (helper prc)
-  (cases proc prc
-    (procedure (vars body old-env) (sym-to-val vars body))
-    (else (invalid-args-exception "helper doesn't work" "helper" prc))
+
+(define expr->val
+  (lambda (lst old-env)
+    (map (lambda (expr) (value-of expr old-env)) lst)
     )
   )
 
-(define expr-to-value
-  (lambda (lst)
-    (map (lambda (expr) (value-of expr (empty-env))) lst)
-    )
-  )
+
   
 
 (define (move st start-p)

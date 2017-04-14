@@ -168,7 +168,26 @@
    (saved-var environment?)))
 
 
+(define (get-func-body-val prc)
+  (cases proc prc
+    (procedure (vars body old-env) body)
+    (else (invalid-args-exception "get-func-body-val" "proc?" prc))
+    )
+  )
 
+(define (get-func-params prc)
+  (cases proc prc
+    (procedure (vars body old-env) vars)
+    (else (invalid-args-exception "get-func-params" "proc?" prc))
+    )
+  )
+
+(define (get-func-env prc)
+  (cases proc prc
+    (procedure (vars body old-env) old-env)
+    (else (invalid-args-exception "get-func-env" "proc?" prc))
+    )
+  )
 
 ;===============================================================================
 ;=============================== Environment ===================================
