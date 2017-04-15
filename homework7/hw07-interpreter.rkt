@@ -34,12 +34,16 @@
 (define (value-of-program prog env)
   (cases program prog
     (a-program
-     (expr rest-of-expressions)
+     (fun-defs expr rest-of-expressions)
+     
      ;given a non-predicate function, andmap will apply the function
      ;to every element in the list and then return the value of
      ;applying the function on the last element.
-     (andmap (lambda (ex) (value-of ex env))
-             (flat-list expr rest-of-expressions))
+     (let
+         ([new-env (foldl value-of env fun-defs)])
+       (andmap (lambda (ex) (value-of ex new-env))
+               (flat-list expr rest-of-expressions))
+       )
      )
     )
   )
@@ -138,12 +142,17 @@
     )
   )
 
+
+;Helper procedure for fun-call-expr
+;Extracts the procedue from the proc-val
+;Also extract the function identifiers, paramaeters
+;Zip them together for evaluation. 
 (define call-helper
   (lambda (func list-of-params env)
     (letrec
         ([proc-val (value-of func env)]
          [proc (proc-val->proc proc-val)]
-         [lst-func-params-val (expr->val list-of-params env)] ;(list (step-val (down-step 40)))
+         [lst-func-params-val (expr->val list-of-params env)]
          [func-body (get-func-body-val proc)]
          [func-env (get-func-env proc)]
          [lst-func-identifiers (get-func-params proc)]
@@ -153,22 +162,21 @@
     )
   )
 
+;Zip the function's identifier and the function's args
 (define (bind lst-vars lst-args old-env)
   (if (= (length lst-vars) (length lst-args))
       (foldl (lambda (var val old-env) (extend-env-wrapper var val old-env FINAL)) old-env lst-vars lst-args)
-      (raise (~a " arity mismatch. expected " (length lst-vars) " arguments, recieved " (length lst-args)))
+      (raise (~a " arity mismatch. expected " (length lst-vars) " arguments, received " (length lst-args)))
       )
   )
 
 
+;Get the val of the expression
 (define expr->val
   (lambda (lst old-env)
     (map (lambda (expr) (value-of expr old-env)) lst)
     )
   )
-
-
-  
 
 (define (move st start-p)
   (cases step st
@@ -232,14 +240,17 @@
       old-env
       (build-new-env (cdr lst-var-expr) (one-at-a-time-add (car lst-var-expr) old-env))))
 
+;Add in fun-def
 (define (one-at-a-time-add var old-env)
   (cases var-expr var
     (val (iden val-of-iden)
          (extend-env-wrapper iden (value-of val-of-iden old-env) old-env NON-FINAL))
     (final-val (iden val-of-iden)
-               (extend-env-wrapper iden (value-of val-of-iden old-env) old-env FINAL))))
+               (extend-env-wrapper iden (value-of val-of-iden old-env) old-env FINAL))
+    (fun-def (func-name func-params func-body) func-body)))
 
 ;=================================== var =======================================
+;Add in fun-def
 (define (value-of-var v-ex env)
   (or (var-expr? v-ex) (invalid-args-exception "value-of-var" "var-expr?" v-ex))
   (cases var-expr v-ex
@@ -250,6 +261,10 @@
     (final-val
      (iden val-of-iden)
      (extend-env-wrapper iden (value-of val-of-iden env) env FINAL))
+
+    (fun-def
+     (func-name func-params func-body)
+     (extend-env-wrapper func-name (proc-val (procedure func-params func-body env)) env FINAL))
     
     (else (raise (~a "value-of-var error: unimplemented expression: " v-ex)))
     )

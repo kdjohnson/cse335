@@ -19,7 +19,8 @@
 
 (define the-grammar
   '(
-    (program (expr (arbno expr)) a-program)
+    ;Support fun-defs in the program 
+    (program ((arbno var-expr ";") expr (arbno expr)) a-program)
     
     (expr (number) num-expr)
     (expr ("up" "(" expr ")") up-expr)
@@ -38,11 +39,15 @@
 
     ; Add in new grammar for fun-expr
     (expr ("fun" "(" (arbno identifier) ")" "=" expr) fun-expr)
-    (expr ("call" "(" expr (arbno expr) ")") fun-call-expr)
 
+    ; Add in new grammar for fun-call-expr
+    (expr ("call" "(" expr (arbno expr) ")") fun-call-expr)
     
     (var-expr ("val" identifier "=" expr) val)
     (var-expr ("final val" identifier "=" expr) final-val)
+
+    ;Add in new grammar for fun-def
+    (var-expr ("def" identifier "(" (arbno identifier) ")" "=" expr) fun-def)
     )
   )
 
